@@ -1,0 +1,102 @@
+<?php
+
+/**
+ * Lombardia Informatica S.p.A.
+ * OPEN 2.0
+ *
+ * @see http://example.com Developers'community
+ * @license GPLv3
+ * @license https://opensource.org/licenses/gpl-3.0.html GNU General Public License version 3
+ *
+ * @package    lispa\amos\documenti\widgets\graphics\views
+ * @category   CategoryName
+ * @author     Lombardia Informatica S.p.A.
+ */
+
+/**
+ * @var View $this
+ * @var ActiveDataProvider $listaDocumenti
+ * @var WidgetGraphicsUltimeDocumenti $widget
+ * @var string $toRefreshSectionId
+ */
+
+use lispa\amos\core\forms\WidgetGraphicsActions;
+use lispa\amos\core\icons\AmosIcons;
+use lispa\amos\documenti\AmosDocumenti;
+use lispa\amos\documenti\models\Documenti;
+use lispa\amos\documenti\widgets\graphics\WidgetGraphicsUltimeDocumenti;
+use yii\data\ActiveDataProvider;
+use yii\helpers\Html;
+use yii\web\View;
+use yii\widgets\Pjax;
+
+?>
+
+<div class="box-widget">
+    <div class="box-widget-toolbar row nom">
+        <h2 class="box-widget-title col-xs-10 nop"><?= AmosDocumenti::tHTml('amosdocumenti', 'Ultimi documenti') ?></h2>
+        <?= WidgetGraphicsActions::widget([
+            'widget' => $widget,
+            'tClassName' => AmosDocumenti::className(),
+            'actionRoute' => '/documenti/documenti/create',
+            'toRefreshSectionId' => $toRefreshSectionId
+        ]); ?>
+    </div>
+    <section>
+        <?php Pjax::begin(['id' => $toRefreshSectionId]); ?>
+        <div role="listbox">
+            <?php
+            if (count($listaDocumenti->getModels()) == 0): ?>
+            <div class="list-items">
+                <h2 class="box-widget-subtitle"><?= AmosDocumenti::tHtml('amosdocumenti', 'Nessun documento'); ?></h2>
+            </div>
+            <?php
+            else:
+            ?>
+            <div class="list-items">
+                <?php
+                foreach ($listaDocumenti->getModels() as $documenti):
+                    /** @var Documenti $documenti */
+                    ?>
+                    <div class="widget-listbox-option row" role="option">
+                        <article class="col-xs-12 nop">
+                            <div class="container-icon">
+                                <?= AmosIcons::show('file-text-o', ['class' => 'icon_widget_graph'],'dash') ?>
+                            </div>
+                            <div class="container-text row">
+                                <div class="col-xs-12 nopl">
+                                    <p><?= Yii::$app->getFormatter()->asDatetime($documenti->created_at); ?></p>
+                                    <h2 class="box-widget-subtitle">
+                                        <?php
+                                        if (strlen($documenti->titolo) > 100) {
+                                            $stringCut = substr($documenti->titolo, 0, 100);
+                                            echo substr($stringCut, 0, strrpos($stringCut, ' ')) . '... ';
+                                        } else {
+                                            echo $documenti->titolo;
+                                        }
+                                        ?>
+                                    </h2>
+                                </div>
+<!--                                <div class="col-xs-12 nopl">-->
+<!--                                    <p class="box-widget-text">< ?= $documenti->sottotitolo; ?></p>-->
+<!--                                </div>-->
+                            </div>
+                            <div class="col-xs-12 m-t-5 nop">
+                                <span class="pull-right">
+                                    <?= Html::a(AmosDocumenti::t('amosdocumenti', 'VISUALIZZA'), ['/documenti/documenti/view', 'id' => $documenti->id], ['class' => 'btn btn-navigation-primary']); ?>
+                                </span>
+                            </div>
+                        </article>
+                    </div>
+                    <?php
+                endforeach;
+                ?>
+                </div>
+                    <?= Html::a(AmosDocumenti::t('amosdocumenti', 'Visualizza Elenco Documenti'), ['/documenti'], ['class' => 'read-all']); ?>
+                <?php
+            endif;
+            ?>
+        </div>
+        <?php Pjax::end(); ?>
+    </section>
+</div>
