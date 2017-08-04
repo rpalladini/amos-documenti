@@ -5,12 +5,6 @@
     "homepage": "http://www.lispa.it/",
     "type": "component",
     "license": "BSD-3-Clause",
-    "support": {
-        "issues": "http://www.example.com/",
-        "forum": "http://www.example.com/forum/",
-        "wiki": "http://www.example.com/wiki/",
-        "source": "https://github.com/lispa/amos-documenti"
-    },
     "require": {
         "php": ">=5.4.0",
         "cornernote/yii2-workflow-manager": "*",
