@@ -14,18 +14,26 @@
  */
 
 use yii\db\Migration;
-use lispa\amos\documenti\models\DocumentiAllegati;
 
+/**
+ * Class m161130_084737_create_documenti_allegati
+ */
 class m161130_084737_create_documenti_allegati extends Migration
 {
     private $tabella = null;
-
+    
+    /**
+     * @inheritdoc
+     */
     public function __construct()
     {
-        $this->tabella = DocumentiAllegati::tableName();
+        $this->tabella = 'documenti_allegati';
         parent::__construct();
     }
-
+    
+    /**
+     * @inheritdoc
+     */
     public function safeUp()
     {
         if ($this->db->schema->getTableSchema($this->tabella, true) === null) {
@@ -46,10 +54,13 @@ class m161130_084737_create_documenti_allegati extends Migration
         } else {
             echo "Nessuna creazione eseguita in quanto la tabella esiste già";
         }
-
+        
         return true;
     }
-
+    
+    /**
+     * @inheritdoc
+     */
     public function safeDown()
     {
         if ($this->db->schema->getTableSchema($this->tabella, true) !== null) {
@@ -59,7 +70,7 @@ class m161130_084737_create_documenti_allegati extends Migration
         } else {
             echo "Nessuna cancellazione eseguita in quanto la tabella non esiste";
         }
-
+        
         return true;
     }
 }

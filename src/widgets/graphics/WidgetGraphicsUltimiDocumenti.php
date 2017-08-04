@@ -18,6 +18,7 @@ namespace lispa\amos\documenti\widgets\graphics;
 use lispa\amos\core\widget\WidgetGraphic;
 use lispa\amos\documenti\AmosDocumenti;
 use lispa\amos\documenti\models\search\DocumentiSearch;
+use lispa\amos\notificationmanager\base\NotifyWidgetDoNothing;
 
 class WidgetGraphicsUltimiDocumenti extends WidgetGraphic
 {
@@ -35,7 +36,9 @@ class WidgetGraphicsUltimiDocumenti extends WidgetGraphic
 
     public function getHtml()
     {
-        $listaDocumenti = (new DocumentiSearch())->lastDocuments($_GET, 3);
+        $search = new DocumentiSearch();
+        $search->setNotifier(new NotifyWidgetDoNothing());
+        $listaDocumenti = $search->lastDocuments($_GET, 3);
 
         return $this->render('ultimi_documenti', [
             'listaDocumenti' => $listaDocumenti,

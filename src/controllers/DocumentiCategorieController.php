@@ -25,7 +25,6 @@ use lispa\amos\dashboard\models\search\AmosWidgetsSearch;
 use lispa\amos\documenti\AmosDocumenti;
 use lispa\amos\documenti\models\DocumentiCategorie;
 use lispa\amos\documenti\models\search\DocumentiCategorieSearch;
-use lispa\amos\upload\models\FilemanagerMediafile;
 use Yii;
 use yii\helpers\Url;
 use yii\web\NotFoundHttpException;
@@ -238,15 +237,6 @@ class DocumentiCategorieController extends CrudController
         $model = new DocumentiCategorie;
 
         if ($model->load(Yii::$app->request->post())) {
-            $modelFile = new FilemanagerMediafile();
-            $modelFile->load($_FILES);
-            $file = UploadedFile::getInstance($modelFile, 'file');
-            if ($file) {
-                $routes = Yii::$app->getModule('upload')->routes;
-                $modelFile->saveUploadedFile($routes, true);
-                $model->filemanager_mediafile_id = $modelFile->id;
-            }
-
             if ($model->validate()) {
                 if ($model->save()) {
                     Yii::$app->getSession()->addFlash('success', AmosDocumenti::tHtml('amosdocumenti', 'Categoria documenti salvata con successo.'));
@@ -279,15 +269,6 @@ class DocumentiCategorieController extends CrudController
         $model = $this->findModel($id);
 
         if ($model->load(Yii::$app->request->post())) {
-            $modelFile = new FilemanagerMediafile();
-            $modelFile->load($_FILES);
-            $file = UploadedFile::getInstance($modelFile, 'file');
-            if ($file) {
-                $routes = Yii::$app->getModule('upload')->routes;
-                $modelFile->saveUploadedFile($routes, true);
-                $model->filemanager_mediafile_id = $modelFile->id;
-            }
-
             if ($model->validate()) {
                 if ($model->save()) {
                     Yii::$app->getSession()->addFlash('success', AmosDocumenti::tHtml('amosdocumenti', 'Categoria documenti aggiornata con successo.'));

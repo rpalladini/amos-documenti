@@ -1,6 +1,12 @@
 @import "../../vendor/lispa/amos-core/views/assets/web/css/less/core.less";
 
 .documents {
+  .shared table {
+    margin: @margin-medium 0 !important;
+  }
+  &.post-horizonatal:not(:last-child) {
+    border-bottom: 0px solid #d4d4d4 !important;
+  }
   .sidebar {
     .icon {
       float: left;
@@ -14,3 +20,4 @@
     }
   }
 }
+

@@ -24,7 +24,7 @@ use lispa\amos\dashboard\controllers\TabDashboardControllerTrait;
 use lispa\amos\documenti\AmosDocumenti;
 use lispa\amos\documenti\models\Documenti;
 use lispa\amos\documenti\models\search\DocumentiSearch;
-use lispa\amos\upload\models\FilemanagerMediafile;
+use raoul2000\workflow\base\WorkflowException;
 use Yii;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
@@ -112,9 +112,17 @@ class DocumentiController extends CrudController
                     [
                         'allow' => true,
                         'actions' => [
+                            'validate-document',
+                            'reject-document',
+                        ],
+                        'roles' => ['AMMINISTRATORE_DOCUMENTI', 'FACILITATORE_DOCUMENTI', 'FACILITATOR', 'DocumentValidateOnDomain']
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => [
                             'to-validate-documents'
                         ],
-                        'roles' => ['VALIDATORE_DOCUMENTI', 'FACILITATORE_DOCUMENTI', 'AMMINISTRATORE_DOCUMENTI']
+                        'roles' => ['VALIDATORE_DOCUMENTI', 'FACILITATORE_DOCUMENTI', 'AMMINISTRATORE_DOCUMENTI', 'DocumentValidateOnDomain']
                     ],
                 ]
             ],
@@ -138,6 +146,42 @@ class DocumentiController extends CrudController
                 'class' => 'yii\web\ErrorAction',
             ],
         ];
+    }
+
+    /**
+     * @param $id
+     * @return \yii\web\Response
+     */
+    public function actionValidateDocument($id)
+    {
+        $news = Documenti::findOne($id);
+        try {
+            $news->sendToStatus(Documenti::DOCUMENTI_WORKFLOW_STATUS_VALIDATO);
+        } catch (WorkflowException $e) {
+            Yii::$app->session->addFlash('danger', AmosDocumenti::t('amosnews', $e->getMessage()));
+            return $this->redirect(Url::previous());
+        }
+        $news->save(false);
+        Yii::$app->session->addFlash('success', AmosDocumenti::t('amosnews', 'Document validated!'));
+        return $this->redirect(Url::previous());
+    }
+
+    /**
+     * @param $id
+     * @return \yii\web\Response
+     */
+    public function actionRejectDocument($id)
+    {
+        $news = Documenti::findOne($id);
+        try {
+            $news->sendToStatus(Documenti::DOCUMENTI_WORKFLOW_STATUS_BOZZA);
+        } catch (WorkflowException $e) {
+            Yii::$app->session->addFlash('danger', AmosDocumenti::t('amosnews', $e->getMessage()));
+            return $this->redirect(Url::previous());
+        }
+        $news->save(false);
+        Yii::$app->session->addFlash('success', AmosDocumenti::t('amosnews', 'Document rejected!'));
+        return $this->redirect(Url::previous());
     }
 
     /**
@@ -205,26 +249,6 @@ class DocumentiController extends CrudController
     }
 
     /**
-     * Action for search all validated documenti.
-     * @return mixed
-     */
-    public function actionDocumenti()
-    {
-        Url::remember();
-        $dataProvider = $this->getModelSearch()->searchAll(Yii::$app->request->getQueryParams());
-        $this->setDataProvider($dataProvider);
-        $this->setCreateNewBtnLabel();
-
-        $this->layout = "@vendor/lispa/amos-core/views/layouts/list";
-        $this->view->params['currentDashboard'] = $this->getCurrentDashboard();
-
-        return $this->render('documenti', [
-            'dataProvider' => $dataProvider,
-            'currentView' => $this->getAvailableView('list'),
-        ]);
-    }
-
-    /**
      * Displays a single Documenti model.
      *
      * @param integer $id
@@ -254,15 +278,6 @@ class DocumentiController extends CrudController
         $this->model = $model;
 
         if ($model->load(Yii::$app->request->post())) {
-            $modelFile = new FilemanagerMediafile();
-            $modelFile->load($_FILES);
-            $file = UploadedFile::getInstance($modelFile, 'file');
-            if ($file) {
-                $routes = Yii::$app->getModule('upload')->routes;
-                $modelFile->saveUploadedFile($routes, true);
-                $model->filemanager_mediafile_id = $modelFile->id;
-            }
-
             if ($model->validate()) {
                 if ($model->save()) {
                     Yii::$app->getSession()->addFlash('success', AmosDocumenti::tHtml('amosdocumenti', 'Documenti salvata con successo.'));
@@ -297,21 +312,7 @@ class DocumentiController extends CrudController
         $this->layout = "@vendor/lispa/amos-core/views/layouts/form";
         $model = $this->findModel($id);
 
-        if ($model && $model->filemanager_mediafile_id) {
-            $file = FilemanagerMediafile::findOne($model->filemanager_mediafile_id);
-            $model->file = $file ? $file->url : null;
-        }
-
         if ($model->load(Yii::$app->request->post())) {
-            $modelFile = new FilemanagerMediafile();
-            $modelFile->load($_FILES);
-            $file = UploadedFile::getInstance($modelFile, 'file');
-            if ($file) {
-                $routes = Yii::$app->getModule('upload')->routes;
-                $modelFile->saveUploadedFile($routes, true);
-                $model->filemanager_mediafile_id = $modelFile->id;
-            }
-
             if ($model->validate()) {
                 if ($model->save()) {
                     Yii::$app->getSession()->addFlash('success', AmosDocumenti::tHtml('amosdocumenti', 'Documento aggiornato con successo.'));
@@ -333,39 +334,6 @@ class DocumentiController extends CrudController
                 'model' => $model,
             ]);
         }
-    }
-
-    /**
-     * Action to download the documenti attachment.
-     *
-     * @param int $idfile FilemanagerMediafile id.
-     * @param string $url
-     * @return \yii\web\Response
-     */
-    public function actionDownload($idfile, $url = null)
-    {
-        if ($idfile) {
-            $base = Yii::getAlias('@webroot');
-            $modelAllegato = \lispa\amos\documenti\models\DocumentiAllegati::findOne(['filemanager_mediafile_id' => $idfile]);
-            if (count($modelAllegato) == 1) {
-                $fileModel = \lispa\amos\upload\models\FilemanagerMediafile::findOne($idfile);
-
-                $path = $fileModel['url'];
-                $pathCompleta = $base . $path;
-                $file = $fileModel['filename'];
-
-                if (!$this->downloadFile($pathCompleta, $file, ["png", "jpg", "jpeg", "txt", "pdf", "txt", "doc", "docx", "xls", "xlsx", "rtf", "gif", "bmp"], $modelAllegato->titolo)) {
-                    Yii::$app->getSession()->addFlash('danger', AmosDocumenti::tHtml('amosdocumenti', 'Errore! File non presente o in formato non supportato.'));
-                }
-            } else {
-                Yii::$app->getSession()->addFlash('danger', AmosDocumenti::tHtml('amosdocumenti', 'Errore! File non presente.'));
-            }
-        }
-        if (!$url) {
-            $url = ['/documenti/documenti/update', 'id' => $modelAllegato->documenti_id, '#' => 'allegati'];
-        }
-
-        return $this->redirect($url);
     }
 
     /**
@@ -403,58 +371,6 @@ class DocumentiController extends CrudController
                     }
                 }
             }
-        }
-        return false;
-    }
-
-    /**
-     * Action to download the documenti attachment.
-     *
-     * @param int $idfile FilemanagerMediafile id.
-     * @param string $url
-     * @return \yii\web\Response
-     */
-    public function actionDownloadDocumentoPrincipale($id, $url = null)
-    {
-        if ($id) {
-            $base = Yii::getAlias('@webroot');
-            $model = \lispa\amos\documenti\models\Documenti::findOne($id);
-            if (count($model) == 1) {
-                $fileModel = \lispa\amos\upload\models\FilemanagerMediafile::findOne($model->filemanager_mediafile_id);
-                $path = $fileModel['url'];
-                $pathCompleta = $base . $path;
-                if (!$this->downloadFileDocumentoPrincipale($pathCompleta, $fileModel->filename)) {
-                    Yii::$app->getSession()->addFlash('danger', AmosDocumenti::tHtml('amosdocumenti', 'Errore! File non presente o in formato non supportato.'));
-                }
-            } else {
-                Yii::$app->getSession()->addFlash('danger', AmosDocumenti::tHtml('amosdocumenti', 'Errore! File non presente.'));
-            }
-            if (!$url) {
-                $url = ['/documenti/documenti/update', 'id' => $id, '#' => 'default'];
-            }
-
-            return $this->redirect($url);
-        }
-        return $this->redirect('/documenti/documenti/index');
-    }
-
-    private function downloadFileDocumentoPrincipale($path, $nomeFile = null)
-    {
-        if (is_file($path)) {
-            header('Content-Description: File Transfer');
-            header('Content-Type: application/octet-stream');
-            $nomeFile = $nomeFile ? $nomeFile : 'documento_principale.txt';
-            header('Content-Disposition: attachment; filename=' . $nomeFile);
-            header('Content-Transfer-Encoding: binary');
-            header('Expires: 0');
-            header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-            header('Pragma: public');
-            header('Content-Length: ' . filesize($path));
-            readfile($path);
-            ob_clean();
-            flush();
-            die;
-            return true; //Yii::$app->response->sendFile($path);
         }
         return false;
     }

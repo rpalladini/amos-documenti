@@ -14,11 +14,10 @@
  */
 
 use lispa\amos\core\forms\ActiveForm;
-use lispa\amos\core\forms\editors\FileInput;
-use yii\bootstrap\Tabs;
-use yii\helpers\Html;
 use lispa\amos\core\forms\CloseSaveButtonWidget;
+use lispa\amos\core\forms\CreatedUpdatedWidget;
 use lispa\amos\documenti\AmosDocumenti;
+use yii\bootstrap\Tabs;
 
 /**
  * @var yii\web\View $this
@@ -28,25 +27,23 @@ use lispa\amos\documenti\AmosDocumenti;
 ?>
 
 <div class="documenti-categorie-form col-xs-12">
-
     <?php
     $form = ActiveForm::begin([
-                'options' => ['enctype' => 'multipart/form-data'] // important
+        'options' => ['enctype' => 'multipart/form-data'] // important
     ]);
-
+    
     $customView = Yii::$app->getViewPath() . '/imageField.php';
     ?>
-
+    
     <?php $this->beginBlock('dettagli'); ?>
     <div class="row">
         <div class="col-lg-8 col-sm-8">
-
+            
             <?= $form->field($model, 'titolo')->textInput(['maxlength' => true]) ?>
             <?= $form->field($model, 'sottotitolo')->textInput(['maxlength' => true]) ?>
         </div>
         <div class="col-lg-4 col-sm-4">
-            <?=
-            $form->field($model,
+            <?= $form->field($model,
                 'documentCategoryImage')->widget(\lispa\amos\attachments\components\AttachmentsInput::classname(), [
                 'options' => [
                     'multiple' => FALSE,
@@ -61,49 +58,39 @@ use lispa\amos\documenti\AmosDocumenti;
                     'overwriteInitial' => false,
                     'layoutTemplates' => false
                 ]
-            ])->label(AmosDocumenti::t('amosdocumenti', 'Immagine categoria'))
-            ?>
-            </div>
-
+            ])->label(AmosDocumenti::t('amosdocumenti', 'Immagine categoria')) ?>
         </div>
     </div>
     <div class="row">
         <div class="col-lg-12 col-sm-12">
-
             <?= $form->field($model, 'descrizione_breve')->textInput(['maxlength' => true]) ?>
         </div>
     </div>
 
     <div class="row">
-
         <div class="col-lg-12 col-sm-12">
-
             <?= $form->field($model, 'descrizione')->textarea(['rows' => 6]) ?>
         </div>
     </div>
     <div class="clearfix"></div>
     <?php $this->endBlock('dettagli'); ?>
-
+    
     <?php
     $itemsTab[] = [
         'label' => AmosDocumenti::tHtml('amosdocumenti', 'Dettagli '),
         'content' => $this->blocks['dettagli'],
     ];
     ?>
-
+    
     <?=
     Tabs::widget(
-            [
-                'encodeLabels' => false,
-                'items' => $itemsTab
-            ]
+        [
+            'encodeLabels' => false,
+            'items' => $itemsTab
+        ]
     );
     ?>
-    <?php
-    $config = [
-        'model' => $model
-    ];
-    echo CloseSaveButtonWidget::widget($config);
-    ?>
+    <?= CreatedUpdatedWidget::widget(['model' => $model]) ?>
+    <?= CloseSaveButtonWidget::widget(['model' => $model]); ?>
     <?php ActiveForm::end(); ?>
 </div>

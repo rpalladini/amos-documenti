@@ -70,6 +70,7 @@ use lispa\amos\documenti\AmosDocumenti;
                     'class' => 'lispa\amos\core\views\grid\ActionColumn',
                 ],
             ],
+            'enableExport' => true
         ],
         'listView' => [
             'itemView' => '_item',

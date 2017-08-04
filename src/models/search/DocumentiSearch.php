@@ -17,18 +17,29 @@ namespace lispa\amos\documenti\models\search;
 
 use lispa\amos\core\module\AmosModule;
 use lispa\amos\documenti\models\Documenti;
+use lispa\amos\notificationmanager\base\NotifyWidget;
 use lispa\amos\notificationmanager\models\NotificationChannels;
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use yii\db\ActiveQuery;
 use yii\helpers\ArrayHelper;
+use yii\di\Container;
 
 /**
  * DocumentiSearch represents the model behind the search form about `lispa\amos\documenti\models\Documenti`.
  */
 class DocumentiSearch extends Documenti
 {
+    private $container;
+
+    public function __construct(array $config = [])
+    {
+        $this->container = new Container();
+        $this->container->set('notify',Yii::$app->getModule('notify'));
+        parent::__construct($config);
+    }
+
     /**
      * @see    \yii\base\Model::rules()    for more info.
      */
@@ -77,28 +88,23 @@ class DocumentiSearch extends Documenti
     public function search($params, $queryType, $limit = null)
     {
         $query = $this->buildQuery($queryType, $params);
+        $query->limit($limit);
 
         /** @var  $notify AmosNotify*/
-        $notify = Yii::$app->getModule('notify');
+        $notify = $this->getNotifier();
         if($notify)
         {
             $notify->notificationOff(Yii::$app->getUser()->id, Documenti::className(),$query,NotificationChannels::CHANNEL_READ);
         }
-
+        $dp_params = ['query' => $query,];
+        if($limit){
+            $dp_params ['pagination'] = false;
+        }
         //set the data provider
-        $dataProvider = new ActiveDataProvider([
-            'query' => $query,
-            'pagination' => [
-                'pageSize' => $limit,
-            ]
-        ]);
+        $dataProvider = new ActiveDataProvider($dp_params);
         //check if can use the custom module order
         if ($this->canUseModuleOrder()) {
-            $dataProvider->setSort([
-                'defaultOrder' => [
-                    $this->orderAttribute => (int)$this->orderType
-                ]
-            ]);
+            $dataProvider->setSort($this->createOrderClause());
         } else { //for widget graphic last news, order is incorrect without this else
             $dataProvider->setSort([
                 'defaultOrder' => [
@@ -369,5 +375,21 @@ class DocumentiSearch extends Documenti
         } else {
             return false;
         }
+    }
+
+    /**
+     * @param $notifier
+     */
+    public function setNotifier(NotifyWidget $notifier)
+    {
+        $this->container->set('notify',$notifier);
+    }
+
+    /**
+     * @return $this
+     */
+    public function getNotifier()
+    {
+        return  $this->container->get('notify');
     }
 }

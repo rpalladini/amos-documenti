@@ -61,7 +61,7 @@ use yii\widgets\Pjax;
                     <div class="widget-listbox-option row" role="option">
                         <article class="col-xs-12 nop">
                             <div class="container-icon">
-                                <?= AmosIcons::show('file-text-o', ['class' => 'icon_widget_graph'],'dash') ?>
+                                <?= AmosIcons::show('download-general',['class' => 'icon_widget_graph'], 'dash') ?>
                             </div>
                             <div class="container-text row">
                                 <div class="col-xs-12 nopl">

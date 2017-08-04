@@ -16,6 +16,7 @@
 namespace lispa\amos\documenti\models\base;
 
 use lispa\amos\documenti\AmosDocumenti;
+use lispa\amos\notificationmanager\record\NotifyRecord;
 use yii\helpers\ArrayHelper;
 
 /**
@@ -37,6 +38,7 @@ use yii\helpers\ArrayHelper;
  * @property    string $data_rimozione
  * @property    integer $documenti_categorie_id
  * @property    string $status
+ * @property    integer $comments_enabled
  * @property    string $created_at
  * @property    string $updated_at
  * @property    string $deleted_at
@@ -46,11 +48,9 @@ use yii\helpers\ArrayHelper;
  *
  * @property \lispa\amos\documenti\models\DocumentiCategorie $documentiCategorie
  * @property \lispa\amos\documenti\models\DocumentiAllegati $documentiAllegati
- * @property \lispa\amos\upload\models\FilemanagerMediafile $documentoPrincipale
  */
-class Documenti extends \lispa\amos\core\record\Record
+class Documenti extends NotifyRecord
 {
-
     /**
      * @see    \yii\db\ActiveRecord::tableName()    for more info.
      */
@@ -58,7 +58,7 @@ class Documenti extends \lispa\amos\core\record\Record
     {
         return 'documenti';
     }
-
+    
     /**
      * @see    \yii\base\Model::rules()    for more info.
      */
@@ -66,8 +66,8 @@ class Documenti extends \lispa\amos\core\record\Record
     {
         return [
             [['descrizione', 'metakey', 'metadesc'], 'string'],
-            [['primo_piano', 'filemanager_mediafile_id', 'hits', 'abilita_pubblicazione', 'in_evidenza', 'documenti_categorie_id', 'created_by', 'updated_by', 'deleted_by'], 'integer'],
-            [['data_pubblicazione', 'data_rimozione', 'created_at', 'updated_at', 'deleted_at', 'status'], 'safe'],
+            [['primo_piano', 'filemanager_mediafile_id', 'hits', 'abilita_pubblicazione', 'in_evidenza', 'documenti_categorie_id', 'created_by', 'updated_by', 'deleted_by', 'comments_enabled'], 'integer'],
+            [['data_pubblicazione', 'data_rimozione', 'created_at', 'updated_at', 'deleted_at', 'status', 'comments_enabled'], 'safe'],
             [['documenti_categorie_id', 'titolo', 'status', 'data_pubblicazione', 'data_rimozione'], 'required'],
             ['data_pubblicazione', 'compare', 'compareAttribute' => 'data_rimozione', 'operator' => '<='],
             ['data_rimozione', 'compare', 'compareAttribute' => 'data_pubblicazione', 'operator' => '>='],
@@ -75,7 +75,7 @@ class Documenti extends \lispa\amos\core\record\Record
             [['titolo', 'sottotitolo', 'descrizione_breve'], 'string', 'max' => 255],
         ];
     }
-
+    
     /**
      * @see    \lispa\amos\core\record\Record::attributeLabels()    for more info.
      */
@@ -100,6 +100,7 @@ class Documenti extends \lispa\amos\core\record\Record
                 'data_rimozione' => AmosDocumenti::t('amosdocumenti', 'Data fine pubblicazione'),
                 'documenti_categorie_id' => AmosDocumenti::t('amosdocumenti', 'Categoria'),
                 'status' => AmosDocumenti::t('amosdocumenti', 'Stato'),
+                'comments_enabled' => AmosDocumenti::t('amosdocumenti', 'Abilita commenti'),
                 'created_at' => AmosDocumenti::t('amosdocumenti', 'Creato il'),
                 'updated_at' => AmosDocumenti::t('amosdocumenti', 'Aggiornato il'),
                 'deleted_at' => AmosDocumenti::t('amosdocumenti', 'Cancellato il'),
@@ -108,7 +109,7 @@ class Documenti extends \lispa\amos\core\record\Record
                 'deleted_by' => AmosDocumenti::t('amosdocumenti', 'Cancellato da'),
             ]);
     }
-
+    
     /**
      * Metodo che mette in relazione la notizia con la singola categoria ad essa associata.
      * Ritorna un ActiveQuery relativo al model DocumentiCategorie.
@@ -120,6 +121,7 @@ class Documenti extends \lispa\amos\core\record\Record
         return $this->hasOne(\lispa\amos\documenti\models\DocumentiCategorie::className(), ['id' => 'documenti_categorie_id']);
     }
 
+    
     /**
      * Metodo che mette in relazione la notizia con i diversi allegati ad essa associata.
      * Ritorna un ActiveQuery relativo al model DocumentiAllegati.
@@ -130,27 +132,4 @@ class Documenti extends \lispa\amos\core\record\Record
     {
         return $this->hasMany(\lispa\amos\documenti\models\DocumentiAllegati::className(), ['documenti_id' => 'id']);
     }
-
-    /**
-     * Metodo che mette in relazione la notizia con i diversi media file ad essa associata.
-     * Ritorna un ActiveQuery relativo al model FilemanagerMediafile.
-     *
-     * @return \yii\db\ActiveQuery
-     */
-    public function getFilemanagerMediafiles()
-    {
-        return $this->hasMany(\lispa\amos\upload\models\FilemanagerMediafile::className(), ['id' => 'filemanager_mediafile_id'])->viaTable('documenti_allegati', ['documenti_id' => 'id']);
-    }
-
-    /**
-     * Metodo che mette in relazione la notizia con la singola immagine ad essa associata.
-     * Ritorna un ActiveQuery relativo al model FilemanagerMediafile.
-     *
-     * @return \yii\db\ActiveQuery
-     */
-    public function getDocumentoPrincipale()
-    {
-        return $this->hasOne(\lispa\amos\upload\models\FilemanagerMediafile::className(), ['id' => 'filemanager_mediafile_id']);
-    }
-
 }

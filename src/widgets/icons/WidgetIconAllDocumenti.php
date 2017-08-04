@@ -52,14 +52,16 @@ class WidgetIconAllDocumenti extends WidgetIcon
         $this->setUrl(['/documenti/documenti/all-documents']);
 
         $DocumentiSearch = new DocumentiSearch();
-        $notifier = \Yii::$app->getModule('notify');
+
+        /*$notifier = \Yii::$app->getModule('notify');
         $count = 0;
         if($notifier)
         {
             $count = $notifier->countNotRead(Yii::$app->getUser()->id, Documenti::class, $DocumentiSearch->buildQuery('all',[]));
         }
         $this->setBulletCount($count);
-
+        */
+        
         $this->setCode('ALL-DOCUMENTI');
         $this->setModuleName('documenti');
         $this->setNamespace(__CLASS__);

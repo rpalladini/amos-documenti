@@ -15,15 +15,20 @@
 
 namespace lispa\amos\documenti\models;
 
+use lispa\amos\comments\models\CommentInterface;
+use lispa\amos\core\views\toolbars\StatsToolbarPanels;
+use lispa\amos\cwh\base\datetime;
 use lispa\amos\cwh\base\ModelContentInterface;
 use lispa\amos\documenti\AmosDocumenti;
+use lispa\amos\attachments\behaviors\FileBehavior;
 use lispa\amos\documenti\widgets\icons\WidgetIconDocumentiDashboard;
 use lispa\amos\notificationmanager\behaviors\NotifyBehavior;
+use lispa\amos\workflow\behaviors\WorkflowLogFunctionsBehavior;
 use pendalf89\filemanager\behaviors\MediafileBehavior;
 use raoul2000\workflow\base\SimpleWorkflowBehavior;
 use yii\helpers\ArrayHelper;
-use lispa\amos\attachments\behaviors\FileBehavior;
-use lispa\amos\comments\models\CommentInterface;
+use yii\log\Logger;
+use Yii;
 
 /**
  * This is the model class for table "documenti".
@@ -144,6 +149,9 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
                 'defaultWorkflowId' => self::DOCUMENTI_WORKFLOW,
                 'propagateErrorsToModel' => true
             ],
+            'workflowLog' =>[
+                'class' => WorkflowLogFunctionsBehavior::className()
+            ],
             'NotifyBehavior' => [
                 'class' => NotifyBehavior::className(),
                 'conditions' => [],
@@ -151,6 +159,7 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
             'fileBehavior' => [
                 'class' => FileBehavior::className()
             ],
+
         ]);
     }
 
@@ -268,6 +277,86 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
      */
     public function isCommentable()
     {
-        return true;
+        return $this->comments_enabled;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTitle()
+    {
+        return $this->titolo;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDescription($truncate)
+    {
+        $ret = $this->descrizione;
+
+        if($truncate){
+            $ret = $this->__shortText($this->descrizione,200);
+        }
+        return $ret;
+    }
+
+    /**
+     * @return string
+     */
+    public function getModelSingularLabel()
+    {
+        return AmosDocumenti::t('amosdocumenti', 'Documento');
+    }
+
+    /**
+     *
+     */
+    public function getStatsToolbar(){
+        $panels = [];
+        $count_comments = 0;
+
+        try{
+            $panels = parent::getStatsToolbar();
+            $filescount = $this->getFileCount() - 1;
+            $panels = ArrayHelper::merge($panels,StatsToolbarPanels::getDocumentsPanel($this,$filescount));
+            if($this->isCommentable()) {
+                $commentModule = \Yii::$app->getModule('comments');
+                if ($commentModule) {
+                    $count_comments = $commentModule->countComments($this);
+                }
+                $panels = ArrayHelper::merge($panels,StatsToolbarPanels::getCommentsPanel($this,$count_comments));
+            }
+        }catch(Exception $ex){
+            Yii::getLogger()->log($ex->getMessage(), Logger::LEVEL_ERROR);
+        }
+        return $panels;
+    }
+
+    /**
+     * @return DateTime date begin of publication
+     */
+    public function getPublicatedFrom()
+    {
+       return $this->data_pubblicazione;
+    }
+
+    /**
+     * @return DateTime date end of publication
+     */
+    public function getPublicatedAt()
+    {
+        return $this->data_rimozione;
+    }
+
+    /**
+     * Metodo che mette in relazione la notizia con la singola categoria ad essa associata.
+     * Ritorna un ActiveQuery relativo al model DocumentiCategorie.
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCategory()
+    {
+        return $this->hasOne(\lispa\amos\documenti\models\DocumentiCategorie::className(), ['id' => 'documenti_categorie_id']);
     }
 }

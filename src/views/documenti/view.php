@@ -19,13 +19,12 @@
  */
 
 use lispa\amos\core\forms\ContextMenuWidget;
+use lispa\amos\core\forms\ItemAndCardHeaderWidget;
 use lispa\amos\core\forms\ShowUserTagsWidget;
+use lispa\amos\core\forms\Tabs;
 use lispa\amos\core\helpers\Html;
 use lispa\amos\core\icons\AmosIcons;
-use lispa\amos\core\views\AmosGridView;
 use lispa\amos\documenti\AmosDocumenti;
-use lispa\amos\core\forms\Tabs;
-use lispa\amos\core\forms\ItemAndCardHeaderWidget;
 use lispa\amos\documenti\assets\ModuleDocumentiAsset;
 
 ModuleDocumentiAsset::register($this);
@@ -57,9 +56,8 @@ $idTabAttachments = 'tab-attachments';
     $avatarCreatore = $creatoreDocumenti->avatar_id;
     ?>
     <?= ItemAndCardHeaderWidget::widget([
-            'model' => $model,
-            'publicationDateField' => 'created_at',
-            'hideInteractionMenu' => true   // TODO rimuovere questa opzione dal widget quando saranno sviluppate le funzionalità
+        'model' => $model,
+        'publicationDateField' => 'created_at',
     ]) ?>
     <?php
     $document = $model->getDocumentMainFile()->one();
@@ -69,7 +67,7 @@ $idTabAttachments = 'tab-attachments';
         $classContainer = 'col-xs-12';
     endif;
     ?>
-    <div class="<?=$classContainer?> nop">
+    <div class="<?= $classContainer ?> nop">
         <div class="post-content col-xs-12 nop">
             <div class="post-title col-xs-10">
                 <h2><?= $model->titolo ?></h2>
@@ -96,38 +94,39 @@ $idTabAttachments = 'tab-attachments';
 
             if ($document) : ?>
                 <div class="box">
-                    <?= '<span class="icon">' . AmosIcons::show('download-general',['class' => 'am-4'], 'dash') . '</span><p class="title">' .$document->name .'</p>'; ?>
+                    <?= '<span class="icon">' . AmosIcons::show('download-general', ['class' => 'am-4'], 'dash') . '</span><p class="title">' . $document->name . '.' . $document->type . '</p>'; ?>
                 </div>
+                <div class="box post-info">
+                    <?= \lispa\amos\core\forms\PublishedByWidget::widget([
+                        'model' => $model,
+                    ]) ?>
+                    <p><strong><?= AmosDocumenti::tHtml('amosdocumenti', 'Categoria') ?>:</strong> <?= $model->documentiCategorie->titolo ?></p>
+                    <p><strong><?= AmosDocumenti::tHtml('amosdocumenti', 'Stato') ?>:</strong> <?= $model->getWorkflowStatus()->getLabel() ?></p>
+                    <p><strong><?= ($model->primo_piano) ? AmosDocumenti::tHtml('amosdocumenti', 'Pubblicato in prima pagina') : '' ?></strong></p>
+                </div>
+
                 <div class="footer_sidebar col-xs-12 nop">
                     <?= Html::a('Scarica File', ['/attachments/file/download/', 'id' => $document->id,'hash' => $document->hash], [
                         'title' => AmosDocumenti::t('amosdocumenti', 'Scarica file'),
                         'class' => 'bk-btnImport pull-right btn btn-amministration-primary',
                     ]); ?>
+
+                    <?php
+                    $statsToolbar = $model->getStatsToolbar();
+                    $visible = isset($statsToolbar) ? $statsToolbar : false;
+                    if($visible) {
+                        echo \lispa\amos\core\views\toolbars\StatsToolbar::widget([
+                            'model' => $model,
+                            'onClick' => true
+                        ]);
+                    }
+                    ?>
                 </div>
             <?php endif; ?>
         </div>
     </div>
 
-    <div class="post-footer col-xs-12 nop">
-        <div class="post-info">
-            <?= \lispa\amos\core\forms\PublishedByWidget::widget([
-                'model' => $model,
-            ]) ?>
-            <p><strong><?= AmosDocumenti::tHtml('amosdocumenti', 'Categoria') ?>:</strong> <?= $model->documentiCategorie->titolo ?></p>
-            <p><strong><?= AmosDocumenti::tHtml('amosdocumenti', 'Stato') ?>:</strong> <?= $model->getWorkflowStatus()->getLabel() ?></p>
-            <p><strong><?= ($model->primo_piano) ? AmosDocumenti::tHtml('amosdocumenti', 'Pubblicato in prima pagina') : '' ?></strong></p>
-        </div>
 
-        <?php
-        $statsToolbar = $model->getStatsToolbar();
-        $visible = isset($statsToolbar) ? $statsToolbar : false;
-        if($visible) {
-            echo \lispa\amos\core\views\toolbars\StatsToolbar::widget([
-                'model' => $model,
-            ]);
-        }
-        ?>
-    </div>
 
     <?php $this->endBlock(); ?>
 
@@ -160,19 +159,16 @@ $idTabAttachments = 'tab-attachments';
 
     <?php $this->beginBlock('attachments'); ?>
     <div class="allegati col-xs-12 nop">
-        <?php
-        if ($model->getDocumentAttachments()->count() == 0) :
-            ?>
+        <?php if ($model->getDocumentAttachments()->count() == 0): ?>
             <p><h4><?= AmosDocumenti::tHtml('amosdocumenti', 'Nessun allegato presente') ?></h4></p>
-            <?php
-        else:
-            ?>
+        <?php else: ?>
             <p>
             <h3><?= AmosDocumenti::tHtml('amosdocumenti', 'Allegati') ?></h3>
             </p>
             <?= \lispa\amos\attachments\components\AttachmentsTableWithPreview::widget([
                 'model' => $model,
-                'attribute' => 'documentAttachments'
+                'attribute' => 'documentAttachments',
+                'viewDeleteBtn' => false
             ]) ?>
         <?php endif; ?>
     </div>

@@ -30,20 +30,24 @@ ModuleDocumentiAsset::register($this);
             $dataPubblicazione = Yii::$app->getFormatter()->asDatetime($model->created_at);
             $nomeCreatoreDocumenti = AmosDocumenti::tHtml('amosdocumenti', 'Utente Cancellato');
             ?>
-            <?= ItemAndCardHeaderWidget::widget([
-                'model' => $model,
-                'publicationDateField' => 'created_at',
-                'hideInteractionMenu' => true   // TODO rimuovere questa opzione dal widget quando saranno sviluppate le funzionalità
-            ]);
 
-            $document = $model->getDocumentMainFile()->one();
+            <div class="col-sm-7 col-xs-12 nop">
+                <div class="col-xs-12 nop">
+                <?= ItemAndCardHeaderWidget::widget([
+                    'model' => $model,
+                    'publicationDateField' => 'created_at',
+                ]);
 
-            if ($document):
-                $classContainer = 'col-sm-7 col-xs-12';
-            else:
-                $classContainer = 'col-xs-12';
-            endif;
-            ?>
+                $document = $model->getDocumentMainFile()->one();
+
+                if ($document):
+                    $classContainer = 'col-sm-7 col-xs-12';
+                else:
+                    $classContainer = 'col-xs-12';
+                endif;
+                ?>
+            </div>
+        </div>
         <div class="<?=$classContainer?> nop">
             <div class="post-content col-xs-12 nop">
                 <div class="post-title col-xs-10">
@@ -51,6 +55,11 @@ ModuleDocumentiAsset::register($this);
                         <h2><?= $model->titolo ?></h2>
                     </a>
                 </div>
+                <?php
+                echo \lispa\amos\notificationmanager\forms\NewsWidget::widget([
+                    'model' => $model,
+                ]);
+                ?>
                 <?= ContextMenuWidget::widget([
                     'model' => $model,
                     'actionModify' => "/documenti/documenti/update?id=" . $model->id,
@@ -74,37 +83,33 @@ ModuleDocumentiAsset::register($this);
                 <?php
                 if ($document) : ?>
                     <div class="box">
-                        <?= '<span class="icon">' . AmosIcons::show('download-general',['class' => 'am-4'], 'dash') . '</span><p class="title">' .$document->name .'</p>'; ?>
+                        <?= '<span class="icon">' . AmosIcons::show('download-general',['class' => 'am-4'], 'dash') . '</span><p class="title">' .$document->name . '.' . $document->type .'</p>'; ?>
+                    </div>
+                    <div class="box post-info">
+                        <?= \lispa\amos\core\forms\PublishedByWidget::widget([
+                            'model' => $model,
+                        ]) ?>
+                        <p><strong>Categoria:</strong> <?= $model->documentiCategorie->titolo ?></p>
+                        <p><strong>Stato:</strong> <?= $model->getWorkflowStatus()->getLabel() ?></p>
+                        <p><strong><?= ($model->primo_piano) ? AmosDocumenti::tHtml('amosdocumenti', 'Pubblicato in prima pagina') : '' ?></strong></p>
                     </div>
                     <div class="footer_sidebar col-xs-12 nop">
                         <?= Html::a('Scarica File', ['/attachments/file/download/', 'id' => $document->id,'hash' => $document->hash], [
                             'title' => AmosDocumenti::t('amosdocumenti', 'Scarica file'),
                             'class' => 'bk-btnImport pull-right btn btn-amministration-primary',
                         ]); ?>
+                        <?php
+                        //$statsToolbar = $model->getStatsToolbar();
+                        $visible = isset($statsToolbar) ? $statsToolbar : false;
+                        if($visible) {
+                            echo \lispa\amos\core\views\toolbars\StatsToolbar::widget([
+                                'model' => $model,
+                            ]);
+                        }
+                        ?>
                     </div>
                 <?php endif; ?>
             </div>
-        </div>
-
-        <div class="post-footer col-xs-12 nop">
-            <div class="post-info">
-                <?= \lispa\amos\core\forms\PublishedByWidget::widget([
-                    'model' => $model,
-                ]) ?>
-                <p><strong>Categoria:</strong> <?= $model->documentiCategorie->titolo ?></p>
-                <p><strong>Stato:</strong> <?= $model->getWorkflowStatus()->getLabel() ?></p>
-                <p><strong><?= ($model->primo_piano) ? AmosDocumenti::tHtml('amosdocumenti', 'Pubblicato in prima pagina') : '' ?></strong></p>
-            </div>
-
-            <?php
-            //$statsToolbar = $model->getStatsToolbar();
-            $visible = isset($statsToolbar) ? $statsToolbar : false;
-            if($visible) {
-                echo \lispa\amos\core\views\toolbars\StatsToolbar::widget([
-                    'model' => $model,
-                ]);
-            }
-            ?>
         </div>
     </div>
 </div>

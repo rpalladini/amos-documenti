@@ -35,7 +35,6 @@ use lispa\amos\documenti\AmosDocumenti;
  * @property    integer $deleted_by
  *
  * @property \lispa\amos\documenti\models\Documenti $documenti
- * @property \lispa\amos\documenti\models\FilemanagerMediafile $filemanagerMediafile
  */
 class DocumentiCategorie extends Record
 {
@@ -90,16 +89,5 @@ class DocumentiCategorie extends Record
     public function getDocumenti()
     {
         return $this->hasMany(\lispa\amos\documenti\models\Documenti::className(), ['documenti_categorie_id' => 'id']);
-    }
-
-    /**
-     * Metodo che mette in relazione l'allegato con il relativo media file ad essa associata.
-     * Ritorna un ActiveQuery relativo al model FilemanagerMediafile.
-     *
-     * @return \yii\db\ActiveQuery
-     */
-    public function getFilemanagerMediafile()
-    {
-        return $this->hasOne(\lispa\amos\upload\models\FilemanagerMediafile::className(), ['id' => 'filemanager_mediafile_id']);
     }
 }

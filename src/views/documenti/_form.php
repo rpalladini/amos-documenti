@@ -15,11 +15,11 @@
 
 use lispa\amos\core\forms\ActiveForm;
 use lispa\amos\core\forms\CloseSaveButtonWidget;
+use lispa\amos\core\forms\CreatedUpdatedWidget;
+use lispa\amos\core\forms\editors\Select;
 use lispa\amos\core\forms\Tabs;
-use lispa\amos\core\forms\WorkflowStateWidget;
 use lispa\amos\core\helpers\Html;
 use lispa\amos\core\icons\AmosIcons;
-use lispa\amos\core\views\AmosGridView;
 use lispa\amos\core\views\assets\AmosCoreAsset;
 use lispa\amos\documenti\AmosDocumenti;
 use lispa\amos\documenti\assets\ModuleDocumentiAsset;
@@ -31,6 +31,7 @@ use yii\helpers\ArrayHelper;
 
 AmosCoreAsset::register($this);
 ModuleDocumentiAsset::register($this);
+
 /**
  * @var yii\web\View $this
  * @var lispa\amos\documenti\models\Documenti $model
@@ -39,23 +40,23 @@ ModuleDocumentiAsset::register($this);
 
 ?>
 
-    <?php 
-    $form = ActiveForm::begin([
-        'options' => ['enctype' => 'multipart/form-data'] // important
-    ]);
-    $customView = Yii::$app->getViewPath() . '/imageField.php';
-    ?>
+<?php
+$form = ActiveForm::begin([
+    'options' => ['enctype' => 'multipart/form-data'] // important
+]);
+$customView = Yii::$app->getViewPath() . '/imageField.php';
+?>
 
-    <?= \lispa\amos\core\forms\WorkflowTransitionWidget::widget([
-        'form' => $form,
-        'model' => $model,
-        'workflowId' => Documenti::DOCUMENTI_WORKFLOW,
-        'classDivIcon' => 'pull-left',
-        'classDivMessage' => 'pull-left message',
-        'viewWidgetOnNewRecord' => true
-    ]); ?>
+<?= \lispa\amos\core\forms\WorkflowTransitionWidget::widget([
+    'form' => $form,
+    'model' => $model,
+    'workflowId' => Documenti::DOCUMENTI_WORKFLOW,
+    'classDivIcon' => 'pull-left',
+    'classDivMessage' => 'pull-left message',
+    'viewWidgetOnNewRecord' => true
+]); ?>
 <div class="documenti-form col-xs-12">
-
+    
     <?php $this->beginBlock('dettagli'); ?>
 
     <div class="row">
@@ -86,7 +87,7 @@ ModuleDocumentiAsset::register($this);
                     ]
                 ])->label(AmosDocumenti::t('amosdocumenti', 'Documento principale'))
                 ?>
-
+                
                 <?php
                 if (!empty($documento)):
                     ?>
@@ -129,7 +130,7 @@ ModuleDocumentiAsset::register($this);
                 '0' => 'No',
                 '1' => 'Si'
             ], [
-
+                    
                     'prompt' => AmosDocumenti::t('amosdocumenti', 'Seleziona...'),
                     'disabled' => false, 'onchange' => '
                     if($(this).val() == 1) $(\'#documenti-in_evidenza\').prop(\'disabled\', false);
@@ -146,7 +147,7 @@ ModuleDocumentiAsset::register($this);
             $form->field($model, 'in_evidenza')->dropDownList([
                 '0' => 'No',
                 '1' => 'Si'
-            ], ['prompt' => AmosDocumenti::t('amosdocumenti', 'Seleziona...'), 'disabled' => ($model->primo_piano == 0)? true: false]
+            ], ['prompt' => AmosDocumenti::t('amosdocumenti', 'Seleziona...'), 'disabled' => ($model->primo_piano == 0) ? true : false]
             )
             ?>
         </div>
@@ -159,26 +160,33 @@ ModuleDocumentiAsset::register($this);
     </div>
 
     <div class="row">
-        <div class="col-lg-6 col-sm-6">
-
-            <?=
-            $form->field($model, 'data_pubblicazione')->widget(DateControl::className(), [
+        <div class="col-lg-4 col-sm-4">
+            <?= $form->field($model, 'data_pubblicazione')->widget(DateControl::className(), [
                 'type' => DateControl::FORMAT_DATE
-            ])
-            ?>
+            ]) ?>
         </div>
-        <div class="col-lg-6 col-sm-6">
-
-            <?=
-            $form->field($model, 'data_rimozione')->widget(DateControl::className(), [
+        <div class="col-lg-4 col-sm-4">
+            <?= $form->field($model, 'data_rimozione')->widget(DateControl::className(), [
                 'type' => DateControl::FORMAT_DATE
-            ])
-            ?>
+            ]) ?>
+        </div>
+        <div class="col-lg-4 col-sm-4">
+            <?= $form->field($model, 'comments_enabled')->widget(Select::className(), [
+                'auto_fill' => true,
+                'data' => [
+                    '0' => AmosDocumenti::t('amosdocumenti', 'No'),
+                    '1' => AmosDocumenti::t('amosdocumenti', 'Si')
+                ],
+                'options' => [
+                    'prompt' => AmosDocumenti::t('amosdocumenti', 'Seleziona'),
+                    'disabled' => false
+                ]
+            ]) ?>
         </div>
     </div>
-
+    
     <?php $this->endBlock('dettagli'); ?>
-
+    
     <?php
     $itemsTab[] = [
         'label' => AmosDocumenti::tHtml('amosdocumenti', 'Dettagli '),
@@ -186,7 +194,7 @@ ModuleDocumentiAsset::register($this);
         'options' => ['id' => 'tab-dettagli'],
     ];
     ?>
-
+    
     <?php $this->beginBlock('allegati'); ?>
     <?php
     if ($model->isNewRecord) :
@@ -195,27 +203,27 @@ ModuleDocumentiAsset::register($this);
             'body' => AmosDocumenti::tHtml('amosdocumenti', 'Prima di poter inserire degli allegati &egrave; necessario salvare il documento.'),
         ]);
     else :
-
-       echo $form->field($model,
+        
+        echo $form->field($model,
             'documentAttachments')->widget(\lispa\amos\attachments\components\AttachmentsInput::classname(), [
             'options' => [ // Options of the Kartik's FileInput widget
                 'multiple' => true, // If you want to allow multiple upload, default to false
             ],
             'pluginOptions' => [ // Plugin options of the Kartik's FileInput widget
-                'maxFileCount' => 100 ,// Client max files,
+                'maxFileCount' => 100,// Client max files,
                 'showPreview' => false
             ]
         ])->label(AmosDocumenti::t('amosdocumenti', 'Allegati')) ?>
         <?= \lispa\amos\attachments\components\AttachmentsTableWithPreview::widget([
-            'model' => $model,
-            'attribute' => 'documentAttachments'
-        ]);
+        'model' => $model,
+        'attribute' => 'documentAttachments'
+    ]);
     endif;
     ?>
 
     <div class="clearfix"></div>
     <?php $this->endBlock('allegati'); ?>
-
+    
     <?php
     $itemsTab[] = [
         'label' => AmosDocumenti::tHtml('amosdocumenti', 'Allegati'),
@@ -223,7 +231,7 @@ ModuleDocumentiAsset::register($this);
         'options' => ['id' => 'allegati'],
     ];
     ?>
-
+    
     <?=
     Tabs::widget(
         [
@@ -235,15 +243,15 @@ ModuleDocumentiAsset::register($this);
     <div class="col-xs-12 note_asterisk nop">
         <!-- TODO decommentare la linea sotto quando viene effetuata la traduzuione del modulo, inserire nelle traduzioni i valori in italiano e poi ri muovere la riga in italiano -->
         <!--p><!--?= AmosDocumenti::tHtml('amosdocumenti', 'The fields marked with ')?><span class="red">*</span><!--?= AmosDocumenti::tHtml('amosdocumenti', ' are required')?></p-->
-        <p><?= AmosDocumenti::tHtml('amosdocumenti', 'I campi contrassegnati con ')?><span class="red">*</span><?= AmosDocumenti::tHtml('amosdocumenti', ' sono obbligatori')?></p>
+        <p><?= AmosDocumenti::tHtml('amosdocumenti', 'I campi contrassegnati con ') ?><span class="red">*</span><?= AmosDocumenti::tHtml('amosdocumenti', ' sono obbligatori') ?></p>
     </div>
+    <?= CreatedUpdatedWidget::widget(['model' => $model]) ?>
     <?php
     $config = [
-        'model' => $model
+        'model' => $model,
+        'urlClose' => Yii::$app->session->get('previousUrl')
     ];
     echo CloseSaveButtonWidget::widget($config);
     ?>
-
     <?php ActiveForm::end(); ?>
 </div>
-

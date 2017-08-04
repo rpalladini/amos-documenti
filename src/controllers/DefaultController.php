@@ -25,12 +25,12 @@ class DefaultController extends DashboardController
     public $layout = "@vendor/lispa/amos-core/views/layouts/dashboard_interna";
 
     /**
-     * Lists all DocumentiAllegati models.
+     * Lists all Documenti models.
      * @return mixed
      */
     public function actionIndex()
     {
-        return $this->redirect(['/documenti/documenti/all-documents']);
+        return $this->redirect(['/documenti/documenti/own-interest-documents']);
         Url::remember();
         $params = [
             'currentDashboard' => $this->getCurrentDashboard()

@@ -16,7 +16,6 @@
 namespace lispa\amos\documenti;
 
 use lispa\amos\core\module\Module;
-use lispa\amos\core\module\ModuleInterface;
 use lispa\amos\documenti\widgets\graphics\WidgetGraphicsUltimiDocumenti;
 use lispa\amos\documenti\widgets\icons\WidgetIconAllDocumenti;
 use lispa\amos\documenti\widgets\icons\WidgetIconDocumenti;
@@ -26,7 +25,7 @@ use lispa\amos\documenti\widgets\icons\WidgetIconDocumentiDashboard;
 use lispa\amos\documenti\widgets\icons\WidgetIconDocumentiDaValidare;
 use Yii;
 
-class AmosDocumenti extends Module implements ModuleInterface
+class AmosDocumenti extends Module
 {
     public static $CONFIG_FOLDER = 'config';
     /**
@@ -35,12 +34,7 @@ class AmosDocumenti extends Module implements ModuleInterface
      * will be taken. If this is false, layout will be disabled within this module.
      */
     public $layout = 'main';
-    public $name = 'Notizie';
-
-    public static function t($category, $message, $params = [], $language = null)
-    {
-        return Yii::t('amos/' . self::getModuleName() . '/' . $category, $message, $params, $language);
-    }
+    public $name = 'Documenti';
 
     public static function getModuleName()
     {
@@ -54,23 +48,6 @@ class AmosDocumenti extends Module implements ModuleInterface
 		\Yii::setAlias('@lispa/amos/' . static::getModuleName() . '/controllers/', __DIR__ . '/controllers/');
         // initialize the module with the configuration loaded from config.php
         Yii::configure($this, require(__DIR__ . DIRECTORY_SEPARATOR . self::$CONFIG_FOLDER . DIRECTORY_SEPARATOR . 'config.php'));
-        $this->registerTranslations();
-    }
-
-    public function registerTranslations()
-    {
-        $translationConfiguration = [
-            'class' => 'yii\i18n\PhpMessageSource',
-            'sourceLanguage' => Yii::$app->language,
-            'basePath' => '@vendor/lispa/amos-' . self::getModuleName() . '/src/messages',
-            'fileMap' => [
-                'amos/' . self::getModuleName() . '/app' => 'app.php',
-            ],
-        ];
-        if (!YII_ENV_PROD) {
-            $translationConfiguration['on missingTranslation'] = ['lispa\amos\core\components\TranslationEventHandler', 'handleMissingTranslation'];
-        }
-        Yii::$app->getI18n()->translations['amos/' . self::getModuleName() . '/*'] = $translationConfiguration;
     }
 
     public function getWidgetIcons()
@@ -91,5 +68,4 @@ class AmosDocumenti extends Module implements ModuleInterface
             WidgetGraphicsUltimiDocumenti::className(),
         ];
     }
-
 }
