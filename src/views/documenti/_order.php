@@ -24,7 +24,7 @@ use yii\widgets\ActiveForm;
  */
 ?>
 
-<div class="news-order element-to-toggle" data-toggle-element="form-order">
+<div class="documenti-order element-to-toggle" data-toggle-element="form-order">
     <div class="col-xs-12">
         <h2><?= AmosDocumenti::t('amosdocumenti', 'Ordina per') ?>:</h2>
     </div>

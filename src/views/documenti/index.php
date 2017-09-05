@@ -13,8 +13,12 @@
  * @author     Lombardia Informatica S.p.A.
  */
 
+use lispa\amos\core\helpers\Html;
+use lispa\amos\core\icons\AmosIcons;
+use lispa\amos\core\utilities\ModalUtility;
 use lispa\amos\core\views\DataProviderView;
 use lispa\amos\documenti\AmosDocumenti;
+use lispa\amos\documenti\models\Documenti;
 
 /**
  * @var yii\web\View $this
@@ -22,6 +26,14 @@ use lispa\amos\documenti\AmosDocumenti;
  * @var lispa\amos\documenti\models\search\DocumentiSearch $model
  * @var \lispa\amos\dashboard\models\AmosUserDashboards $currentDashboard
  */
+
+$actionColumnDefault = '{view}{update}{delete}';
+$actionColumnToValidate = '{validate}{reject}';
+$actionColumn = $actionColumnDefault;
+if (Yii::$app->controller->action->id == 'to-validate-documents') {
+    $actionColumn = $actionColumnToValidate . $actionColumnDefault;
+}
+
 ?>
 <div class="documenti-index">
     <?php
@@ -68,6 +80,49 @@ use lispa\amos\documenti\AmosDocumenti;
                 ],
                 [
                     'class' => 'lispa\amos\core\views\grid\ActionColumn',
+                    'template' => $actionColumn,
+                    'buttons' => [
+                        'validate' => function ($url, $model) {
+                            /** @var Documenti $model */
+                            $btn = '';
+                            if (Yii::$app->getUser()->can('DocumentValidate', ['model' => $model])) {
+                                $btn = ModalUtility::addConfirmRejectWithModal([
+                                    'modalId' => 'validate-document-modal-id',
+                                    'modalDescriptionText' => AmosDocumenti::t('amosdocumenti', '#VALIDATE_DOCUMENT_MODAL_TEXT'),
+                                    'btnText' => AmosIcons::show('check-circle', ['class' => 'btn btn-tool-secondary']),
+                                    'btnLink' => Yii::$app->urlManager->createUrl(['/documenti/documenti/validate-document', 'id' => $model['id']]),
+                                    'btnOptions' => ['title' => AmosDocumenti::t('amosdocumenti', 'Publish')]
+                                ]);
+                            }
+                            return $btn;
+                        },
+                        'reject' => function ($url, $model) {
+                            /** @var Documenti $model */
+                            $btn = '';
+                            if (Yii::$app->getUser()->can('DocumentValidate', ['model' => $model])) {
+                                $btn = ModalUtility::addConfirmRejectWithModal([
+                                    'modalId' => 'reject-document-modal-id',
+                                    'modalDescriptionText' => AmosDocumenti::t('amosdocumenti', '#REJECT_DOCUMENT_MODAL_TEXT'),
+                                    'btnText' => AmosIcons::show('minus-circle', ['class' => 'btn btn-tool-secondary']),
+                                    'btnLink' => Yii::$app->urlManager->createUrl(['/documenti/documenti/reject-document', 'id' => $model['id']]),
+                                    'btnOptions' => ['title' => AmosDocumenti::t('amosdocumenti', 'Reject'), 'class' => 'reject-btns']
+                                ]);
+                            }
+                            return $btn;
+                        },
+                        'update' => function ($url, $model) {
+                            /** @var Documenti $model */
+                            $btn = '';
+                            if (Yii::$app->user->can('DOCUMENTI_UPDATE', ['model' => $model])) {
+                                $action = '/documenti/documenti/update?id=' . $model->id;
+                                $options = \lispa\amos\core\utilities\ModalUtility::getBackToEditPopup($model,
+                                    'DocumentValidate', $action, ['class' => 'btn btn-tool-secondary']);
+                                return Html::a(\lispa\amos\core\icons\AmosIcons::show('edit'), $action,
+                                    $options);
+                            }
+                            return $btn;
+                        }
+                    ]
                 ],
             ],
             'enableExport' => true

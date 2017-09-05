@@ -34,7 +34,7 @@ use yii\widgets\Pjax;
 
 <div class="box-widget">
     <div class="box-widget-toolbar row nom">
-        <h2 class="box-widget-title col-xs-10 nop"><?= AmosDocumenti::tHTml('amosdocumenti', 'Ultimi documenti') ?></h2>
+        <h1 class="box-widget-title col-xs-10 nop"><?= AmosDocumenti::tHTml('amosdocumenti', 'Ultimi documenti') ?></h1>
         <?= WidgetGraphicsActions::widget([
             'widget' => $widget,
             'tClassName' => AmosDocumenti::className(),
@@ -43,6 +43,7 @@ use yii\widgets\Pjax;
         ]); ?>
     </div>
     <section>
+        <h2 class="sr-only"><?= AmosDocumenti::t('amosdocumenti', 'Ultimi documenti') ?></h2>
         <?php Pjax::begin(['id' => $toRefreshSectionId]); ?>
         <div role="listbox">
             <?php

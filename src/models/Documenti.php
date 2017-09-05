@@ -15,124 +15,174 @@
 
 namespace lispa\amos\documenti\models;
 
+use lispa\amos\documenti\i18n\grammar\DocumentsGrammar;
+use lispa\amos\attachments\behaviors\FileBehavior;
 use lispa\amos\comments\models\CommentInterface;
 use lispa\amos\core\views\toolbars\StatsToolbarPanels;
-use lispa\amos\cwh\base\datetime;
 use lispa\amos\cwh\base\ModelContentInterface;
 use lispa\amos\documenti\AmosDocumenti;
-use lispa\amos\attachments\behaviors\FileBehavior;
 use lispa\amos\documenti\widgets\icons\WidgetIconDocumentiDashboard;
 use lispa\amos\notificationmanager\behaviors\NotifyBehavior;
 use lispa\amos\workflow\behaviors\WorkflowLogFunctionsBehavior;
 use pendalf89\filemanager\behaviors\MediafileBehavior;
 use raoul2000\workflow\base\SimpleWorkflowBehavior;
+use Yii;
+use yii\db\Query;
 use yii\helpers\ArrayHelper;
 use yii\log\Logger;
-use Yii;
+use lispa\amos\core\interfaces\ViewModelInterface;
+use yii\helpers\Url;
 
 /**
+ * Class Documenti
+ *
  * This is the model class for table "documenti".
+ *
+ * @method \cornernote\workflow\manager\components\WorkflowDbSource getWorkflowSource()
+ * @method \yii\db\ActiveQuery hasOneFile($attribute = 'file', $sort = 'id')
+ * @method \yii\db\ActiveQuery hasMultipleFiles($attribute = 'file', $sort = 'id')
+ * @method string|null getRegolaPubblicazione()
+ * @method array getTargets()
+ *
+ * @package lispa\amos\documenti\models
  */
-class Documenti extends \lispa\amos\documenti\models\base\Documenti implements ModelContentInterface, CommentInterface
+class Documenti extends \lispa\amos\documenti\models\base\Documenti implements ModelContentInterface, CommentInterface, ViewModelInterface
 {
-    /**
-     * @var    string    DOCUMENTI_WORKFLOW    ID del workflow del model
-     */
+    // Workflow ID
     const DOCUMENTI_WORKFLOW = 'DocumentiWorkflow';
-
-    /**
-     * @var    string    DOCUMENTI_WODOCUMENTI_WORKFLOW_STATUS_BOZZARKFLOW        ID dello stato di bozza del workflow del model
-     */
+    
+    // Workflow states IDS
     const DOCUMENTI_WORKFLOW_STATUS_BOZZA = 'DocumentiWorkflow/BOZZA';
-
-    /**
-     * @var    string    DOCUMENTI_WORKFLOW_STATUS_DAVALIDARE        ID dello stato da validare del workflow del model
-     */
     const DOCUMENTI_WORKFLOW_STATUS_DAVALIDARE = 'DocumentiWorkflow/DAVALIDARE';
-
-    /**
-     * @var    string    DOCUMENTI_WORKFLOW_STATUS_VALIDATO    ID dello stato validato del workflow del model
-     */
     const DOCUMENTI_WORKFLOW_STATUS_VALIDATO = 'DocumentiWorkflow/VALIDATO';
-
-    /**
-     * @var    string    DOCUMENTI_WORKFLOW_STATUS_NONVALIDATO    ID dello stato non validato del workflow del model
-     */
     const DOCUMENTI_WORKFLOW_STATUS_NONVALIDATO = 'DocumentiWorkflow/NONVALIDATO';
-
+    
     /**
-     * @var    string $regola_pubblicazione Regola di pubblicazione
+     * All the scenarios listed below are for the wizard.
+     */
+    const SCENARIO_INTRODUCTION = 'scenario_introduction';
+    const SCENARIO_DETAILS = 'scenario_details';
+    const SCENARIO_PUBLICATION = 'scenario_publication';
+    const SCENARIO_SUMMARY = 'scenario_summary';
+    
+    /**
+     * @var string $regola_pubblicazione Regola di pubblicazione
      */
     public $regola_pubblicazione;
-
+    
     /**
-     * @var    string $destinatari Destinatari
+     * @var string $destinatari Destinatari
      */
     public $destinatari;
-
+    
     /**
-     * @var    string $validatori Validatori
+     * @var string $validatori Validatori
      */
     public $validatori;
-
+    
     /**
-     * @var    string $distance Distanza
+     * @var string $distance Distanza
      */
     public $distance;
-
+    
     /**
-     * @var    string $destinatari_pubblicazione Destinatari pubblicazione
+     * @var string $destinatari_pubblicazione Destinatari pubblicazione
      */
     public $destinatari_pubblicazione;
-
+    
     /**
-     * @var    string $destinatari_notifiche Destinatari notifiche
+     * @var string $destinatari_notifiche Destinatari notifiche
      */
     public $destinatari_notifiche;
-
+    
     /**
-     * @var    mixed $file File
+     * @var mixed $file File
      */
     public $file;
-
+    
     /**
      * @var $documentMainFile
      */
     public $documentMainFile;
-
+    
     /**
      * @var $documentAttachments
      */
     public $documentAttachments;
-
+    
     /**
-     * @see    \yii\db\BaseActiveRecord::init()    for more info.
+     * @inheritdoc
      */
     public function init()
     {
         parent::init();
-
+        
         if ($this->isNewRecord) {
             $this->status = $this->getWorkflowSource()->getWorkflow(self::DOCUMENTI_WORKFLOW)->getInitialStatusId();
+            $this->data_pubblicazione = date("Y-m-d");
+            $query = new Query();
+            $categories = $query->from(DocumentiCategorie::tableName())->all();
+            $countCategories = count($categories);
+            if ($countCategories == 1) {
+                $this->documenti_categorie_id = $categories[0]['id'];
+            }
         }
     }
-
+    
     /**
-     * @see    \yii\base\Model::rules()    for more info.
+     * @inheritdoc
      */
     public function rules()
     {
         return ArrayHelper::merge(parent::rules(), [
             [['destinatari_pubblicazione', 'destinatari_notifiche'], 'safe'],
             [['documentMainFile'], 'required'],
-            [['documentAttachments'], 'file','extensions' => 'txt, csv, pdf, txt, doc, docx, xls, xlsx, rtf','maxFiles' => 0],
-            [['documentMainFile'], 'file','skipOnEmpty' => true,'extensions' => 'txt, csv, pdf, txt, doc, docx, xls, xlsx, rtf','maxFiles' => 1,'on' => 'update'],
-            [['documentMainFile'], 'file','skipOnEmpty' => false,'extensions' => 'txt, csv, pdf, txt, doc, docx, xls, xlsx, rtf','maxFiles' => 1,'on' => 'create'],
+            [['documentAttachments'], 'file', 'extensions' => 'txt, csv, pdf, txt, doc, docx, xls, xlsx, rtf', 'maxFiles' => 0],
+            [['documentMainFile'], 'file', 'skipOnEmpty' => true, 'extensions' => 'txt, csv, pdf, txt, doc, docx, xls, xlsx, rtf', 'maxFiles' => 1, 'on' => 'update'],
+            [['documentMainFile'], 'file', 'skipOnEmpty' => false, 'extensions' => 'txt, csv, pdf, txt, doc, docx, xls, xlsx, rtf', 'maxFiles' => 1, 'on' => 'create'],
         ]);
     }
-
+    
     /**
-     * @see    \yii\base\Component::behaviors()    for more info.
+     * @inheritdoc
+     */
+    public function attributeLabels()
+    {
+        return ArrayHelper::merge(parent::attributeLabels(), [
+            'documentMainFile' => AmosDocumenti::t('amosdocumenti', '#MAIN_DOCUMENT'),
+        ]);
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function scenarios()
+    {
+        $scenarios = parent::scenarios();
+        $scenarios[self::SCENARIO_DETAILS] = [
+            'documentMainFile',
+            'titolo',
+            'sottotitolo',
+            'descrizione_breve',
+            'descrizione',
+            'documenti_categorie_id',
+            'data_pubblicazione',
+            'data_rimozione',
+            'comments_enabled',
+            'status'
+        ];
+        $scenarios[self::SCENARIO_PUBLICATION] = [
+            'destinatari_pubblicazione',
+            'destinatari_notifiche'
+        ];
+        $scenarios[self::SCENARIO_SUMMARY] = [
+            'status'
+        ];
+        return $scenarios;
+    }
+    
+    /**
+     * @inheritdoc
      */
     public function behaviors()
     {
@@ -149,7 +199,7 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
                 'defaultWorkflowId' => self::DOCUMENTI_WORKFLOW,
                 'propagateErrorsToModel' => true
             ],
-            'workflowLog' =>[
+            'workflowLog' => [
                 'class' => WorkflowLogFunctionsBehavior::className()
             ],
             'NotifyBehavior' => [
@@ -159,23 +209,23 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
             'fileBehavior' => [
                 'class' => FileBehavior::className()
             ],
-
+        
         ]);
     }
-
+    
     /**
-     *
+     * @inheritdoc
      */
     public function afterFind()
     {
         parent::afterFind();
-
+        
         $this->documentMainFile = $this->getDocumentMainFile()->one();
         $this->documentAttachments = $this->getDocumentAttachments()->one();
     }
-
+    
     /**
-     * @see    \lispa\amos\core\record\Record::representingColumn()    for more info.
+     * @inheritdoc
      */
     public function representingColumn()
     {
@@ -184,20 +234,13 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
         ];
     }
 
+    
     /**
-     *@inheritdoc
-     */
-    public function getModelLabel()
-    {
-        return AmosDocumenti::t('amosdocumenti', 'Documenti');
-    }
-
-    /**
-     *@inheritdoc
+     * @inheritdoc
      */
     public function getGridViewColumns()
     {
-        return  [
+        return [
             'titolo' => [
                 'attribute' => 'titolo',
                 'headerOptions' => [
@@ -219,7 +262,7 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
             ],
         ];
     }
-
+    
     /**
      * @inheritdoc
      */
@@ -227,33 +270,44 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
     {
         return "documenti/documenti/view";
     }
-
+    
     /**
      * @inheritdoc
      */
-    public function getToValidateStatus(){
+    public function getToValidateStatus()
+    {
         return self::DOCUMENTI_WORKFLOW_STATUS_DAVALIDARE;
     }
-
+    
     /**
      * @inheritdoc
      */
-    public function getValidatedStatus(){
+    public function getValidatedStatus()
+    {
         return self::DOCUMENTI_WORKFLOW_STATUS_VALIDATO;
     }
-
+    
     /**
      * @inheritdoc
      */
-    public function getDraftStatus(){
+    public function getDraftStatus()
+    {
         return self::DOCUMENTI_WORKFLOW_STATUS_BOZZA;
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getValidatorRole()
+    {
+        return 'VALIDATORE_DOCUMENTI';
+    }
+    
     public function getPluginWidgetClassname()
     {
         return WidgetIconDocumentiDashboard::className();
     }
-
+    
     /**
      * Getter for $this->documentMainFile;
      * @return \yii\db\ActiveQuery
@@ -262,7 +316,7 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
     {
         return $this->hasOneFile('documentMainFile');
     }
-
+    
     /**
      * Getter for $this->documentAttachments;
      * @return \yii\db\ActiveQuery
@@ -271,7 +325,7 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
     {
         return $this->hasMultipleFiles('documentAttachments');
     }
-
+    
     /**
      * @inheritdoc
      */
@@ -279,7 +333,7 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
     {
         return $this->comments_enabled;
     }
-
+    
     /**
      * @return string
      */
@@ -287,60 +341,56 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
     {
         return $this->titolo;
     }
-
+    
     /**
      * @return string
      */
     public function getDescription($truncate)
     {
         $ret = $this->descrizione;
-
-        if($truncate){
-            $ret = $this->__shortText($this->descrizione,200);
+        
+        if ($truncate) {
+            $ret = $this->__shortText($this->descrizione, 200);
         }
         return $ret;
     }
+    
 
+    
     /**
-     * @return string
+     * @return array
      */
-    public function getModelSingularLabel()
+    public function getStatsToolbar()
     {
-        return AmosDocumenti::t('amosdocumenti', 'Documento');
-    }
-
-    /**
-     *
-     */
-    public function getStatsToolbar(){
         $panels = [];
         $count_comments = 0;
-
-        try{
+        
+        try {
             $panels = parent::getStatsToolbar();
-            $filescount = $this->getFileCount() - 1;
-            $panels = ArrayHelper::merge($panels,StatsToolbarPanels::getDocumentsPanel($this,$filescount));
-            if($this->isCommentable()) {
+            $filescount =  $this->getFileCount() - 1;
+            $panels = ArrayHelper::merge($panels, StatsToolbarPanels::getDocumentsPanel($this, $filescount));
+            if ($this->isCommentable()) {
                 $commentModule = \Yii::$app->getModule('comments');
                 if ($commentModule) {
+                    /** @var \lispa\amos\comments\AmosComments $commentModule */
                     $count_comments = $commentModule->countComments($this);
                 }
-                $panels = ArrayHelper::merge($panels,StatsToolbarPanels::getCommentsPanel($this,$count_comments));
+                $panels = ArrayHelper::merge($panels, StatsToolbarPanels::getCommentsPanel($this, $count_comments));
             }
-        }catch(Exception $ex){
+        } catch (\Exception $ex) {
             Yii::getLogger()->log($ex->getMessage(), Logger::LEVEL_ERROR);
         }
         return $panels;
     }
-
+    
     /**
      * @return DateTime date begin of publication
      */
     public function getPublicatedFrom()
     {
-       return $this->data_pubblicazione;
+        return $this->data_pubblicazione;
     }
-
+    
     /**
      * @return DateTime date end of publication
      */
@@ -348,7 +398,7 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
     {
         return $this->data_rimozione;
     }
-
+    
     /**
      * Metodo che mette in relazione la notizia con la singola categoria ad essa associata.
      * Ritorna un ActiveQuery relativo al model DocumentiCategorie.
@@ -358,5 +408,21 @@ class Documenti extends \lispa\amos\documenti\models\base\Documenti implements M
     public function getCategory()
     {
         return $this->hasOne(\lispa\amos\documenti\models\DocumentiCategorie::className(), ['id' => 'documenti_categorie_id']);
+    }
+
+    /**
+     * @return string The url to view of this model
+     */
+    public function getFullViewUrl()
+    {
+        return Url::toRoute(["/".$this->getViewUrl(), "id" => $this->id]);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getGrammar()
+    {
+        return new DocumentsGrammar();
     }
 }

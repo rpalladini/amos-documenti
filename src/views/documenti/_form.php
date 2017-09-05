@@ -112,7 +112,16 @@ $customView = Yii::$app->getViewPath() . '/imageField.php';
             //                'preset' => 'standard',
             //            ])
             ?>
-            <?= $form->field($model, 'descrizione')->widget(\yii\redactor\widgets\Redactor::className()) ?>
+            <?= $form->field($model, 'descrizione')->widget(\yii\redactor\widgets\Redactor::className(), [
+                'clientOptions' => [
+                    'placeholder' => AmosDocumenti::t('amosdocumenti', '#documents_text_placeholder'),
+                    'buttonsHide' => [
+                        'image',
+                        'file'
+                    ],
+                    'lang' => substr(Yii::$app->language, 0, 2)
+                ]
+            ]) ?>
         </div>
     </div>
     <div class="row">
